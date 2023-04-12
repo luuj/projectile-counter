@@ -15,7 +15,7 @@ public interface ProjectileCounterConfig extends Config {
     @ConfigItem(
             name = "Projectile ID List",
             keyName = "allProjectile",
-            description = "Input projectile ID on each line: ID, 1 or ID, 2",
+            description = "Format: Projectile ID, Color #",
             position = 1,
             section = "projSettings"
     )

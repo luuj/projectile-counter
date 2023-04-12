@@ -74,8 +74,10 @@ public class ProjectileCounterPlugin extends Plugin {
         final Projectile proj = event.getProjectile();
         Actor currTarget = proj.getInteracting();
 
-        if (config.showSelf() && !currTarget.equals(client.getLocalPlayer()))
-            return;
+        if (currTarget != null){
+            if (config.showSelf() && !currTarget.equals(client.getLocalPlayer()))
+                return;
+        }
 
         List<String> strList = SPLITTER.splitToList(this.config.allProjectile());
         Iterator var4 = strList.iterator();
