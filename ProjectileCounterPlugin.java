@@ -89,7 +89,7 @@ public class ProjectileCounterPlugin extends Plugin {
                 if (proj.getId() == Integer.valueOf(stringList[0])){
                     boolean contains = false;
                     for(int i = this.projectileList.size() - 1; i >= 0; --i) {
-                        if (this.projectileList.get(i).currProjectile.getId() == proj.getId())
+                        if (this.projectileList.contains(proj))
                         {
                             contains=true;
                             break;
