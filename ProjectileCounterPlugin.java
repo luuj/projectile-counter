@@ -100,6 +100,8 @@ public class ProjectileCounterPlugin extends Plugin {
                             this.projectileList.add(new ProjectileInfo(proj, this.config.projColor()));
                         }else if(Integer.valueOf(stringList[1])==2){
                             this.projectileList.add(new ProjectileInfo(proj, this.config.projColor2()));
+                        }else if(Integer.valueOf(stringList[1])==3){
+                            this.projectileList.add(new ProjectileInfo(proj, this.config.projColor3()));
                         }
                         return;
                     }

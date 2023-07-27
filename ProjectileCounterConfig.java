@@ -47,6 +47,18 @@ public interface ProjectileCounterConfig extends Config {
         return Color.GREEN;
     }
 
+    @ConfigItem(
+            keyName = "projColor3",
+            name = "Tick Number Color 3",
+            description = "Color of projectile tick counter",
+            position = 3,
+            section = "projSettings"
+    )
+    default Color projColor3()
+    {
+        return Color.RED;
+    }
+
     @Range(
             min = 5,
             max = 50
@@ -55,7 +67,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "textSize",
             name = "Text Size",
             description = "Sets the text size of the ticks overlay",
-            position = 3,
+            position = 4,
             section = "projSettings"
     )
     default int textSize() {
@@ -66,7 +78,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "showSelf",
             name = "Show player-targeted proj. only",
             description = "Only show projectiles targeted at self",
-            position = 4,
+            position = 5,
             section = "projSettings"
     )
     default boolean showSelf() {
