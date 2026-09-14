@@ -4,7 +4,6 @@ import com.google.common.base.Splitter;
 import com.google.inject.Provides;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
-import net.runelite.api.NPC;
 import net.runelite.api.Projectile;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ProjectileMoved;
@@ -12,7 +11,6 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.tickcd.NpcInfo;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
