@@ -15,7 +15,7 @@ public interface ProjectileCounterConfig extends Config {
     @ConfigItem(
             name = "Projectile ID List",
             keyName = "allProjectile",
-            description = "Format: Projectile ID, Color #",
+            description = "One entry per line: projectile ID, color number (1-3)",
             position = 1,
             section = "projSettings"
     )
@@ -27,7 +27,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "projColor",
             name = "Tick Number Color 1",
             description = "Color of projectile tick counter",
-            position = 2,
+            position = 3,
             section = "projSettings"
     )
     default Color projColor()
@@ -51,7 +51,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "projColor3",
             name = "Tick Number Color 3",
             description = "Color of projectile tick counter",
-            position = 3,
+            position = 4,
             section = "projSettings"
     )
     default Color projColor3()
@@ -67,7 +67,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "textSize",
             name = "Text Size",
             description = "Sets the text size of the ticks overlay",
-            position = 4,
+            position = 5,
             section = "projSettings"
     )
     default int textSize() {
@@ -76,9 +76,9 @@ public interface ProjectileCounterConfig extends Config {
 
     @ConfigItem(
             keyName = "showSelf",
-            name = "Show player-targeted proj. only",
-            description = "Only show projectiles targeted at self",
-            position = 5,
+		name = "Hide other-targeted projectiles",
+		description = "Hide projectiles explicitly targeted at another actor; ground-targeted projectiles are still shown",
+            position = 6,
             section = "projSettings"
     )
     default boolean showSelf() {

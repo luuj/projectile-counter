@@ -2,111 +2,192 @@ package net.runelite.client.plugins.projectilecd;
 
 import com.google.common.base.Splitter;
 import com.google.inject.Provides;
+import java.awt.Color;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.Player;
 import net.runelite.api.Projectile;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ProjectileMoved;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 @PluginDescriptor(
-        name = "<html><font color=#b82584>[J] Projectile Ticks",
-        description = "Overlays a tick counter for projectiles",
-        tags = {"projectile"},
-        enabledByDefault = false
+	name = "<html><font color=#b82584>[J] Projectile Ticks",
+	description = "Overlays a tick counter for projectiles",
+	tags = {"projectile"},
+	enabledByDefault = false
 )
-public class ProjectileCounterPlugin extends Plugin {
-    @Inject
-    private Client client;
-    @Inject
-    private OverlayManager overlayManager;
-    @Inject
-    private ProjectileCounterOverlay overlay;
-    @Inject
-    private ProjectileCounterConfig config;
-    private static final Splitter SPLITTER = Splitter.on("\n").omitEmptyStrings().trimResults();
-    public ArrayList<ProjectileInfo> projectileList = new ArrayList();
+@Slf4j
+public class ProjectileCounterPlugin extends Plugin
+{
+	private static final Splitter SPLITTER = Splitter.on("\n").omitEmptyStrings().trimResults();
+	private static final String CONFIG_GROUP = "Projectile";
+	private static final int MIN_COLOR_NUMBER = 1;
+	private static final int MAX_COLOR_NUMBER = 3;
 
-    public ProjectileCounterPlugin() {
-    }
+	@Inject
+	private Client client;
 
-    @Provides
-    ProjectileCounterConfig getConfig(ConfigManager configManager) {
-        return (ProjectileCounterConfig)configManager.getConfig(ProjectileCounterConfig.class);
-    }
+	@Inject
+	private OverlayManager overlayManager;
 
-    protected void startUp() {
-        this.reset();
-        this.overlayManager.add(this.overlay);
-    }
+	@Inject
+	private ProjectileCounterOverlay overlay;
 
-    protected void shutDown() {
-        this.reset();
-        this.overlayManager.remove(this.overlay);
-    }
+	@Inject
+	private ProjectileCounterConfig config;
 
-    private void reset() {
-        this.projectileList.clear();
-    }
+	final Map<Projectile, ProjectileInfo> projectileInfos = new HashMap<>();
+	private final Map<Integer, Color> projectileRules = new HashMap<>();
 
-    @Subscribe
-    public void onGameTick(GameTick event) {
-        for(int i = this.projectileList.size() - 1; i >= 0; --i) {
-            if (((ProjectileInfo)this.projectileList.get(i)).currProjectile.getRemainingCycles()/30 <= 0) {
-                this.projectileList.remove(i);
-            }
-        }
-    }
+	@Provides
+	ProjectileCounterConfig getConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(ProjectileCounterConfig.class);
+	}
 
-    @Subscribe
-    public void onProjectileMoved(final ProjectileMoved event){
-        final Projectile proj = event.getProjectile();
-        Actor currTarget = proj.getInteracting();
+	@Override
+	protected void startUp()
+	{
+		reset();
+		rebuildProjectileRules();
+		overlayManager.add(overlay);
+	}
 
-        if (currTarget != null){
-            if (config.showSelf() && !currTarget.equals(client.getLocalPlayer()))
-                return;
-        }
+	@Override
+	protected void shutDown()
+	{
+		reset();
+		projectileRules.clear();
+		overlayManager.remove(overlay);
+	}
 
-        List<String> strList = SPLITTER.splitToList(this.config.allProjectile());
-        Iterator var4 = strList.iterator();
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (CONFIG_GROUP.equals(event.getGroup()))
+		{
+			rebuildProjectileRules();
+			refreshTrackedProjectiles();
+		}
+	}
 
-        while(var4.hasNext()) {
-            String str = (String)var4.next();
-            String[] stringList = str.split(",");
-            if (stringList.length > 1){
-                if (proj.getId() == Integer.valueOf(stringList[0])){
-                    boolean contains = false;
-                    for(int i = this.projectileList.size() - 1; i >= 0; --i) {
-                        if (this.projectileList.contains(proj))
-                        {
-                            contains=true;
-                            break;
-                        }
-                    }
-                    if(!contains){
-                        if(Integer.valueOf(stringList[1])==1) {
-                            this.projectileList.add(new ProjectileInfo(proj, this.config.projColor()));
-                        }else if(Integer.valueOf(stringList[1])==2){
-                            this.projectileList.add(new ProjectileInfo(proj, this.config.projColor2()));
-                        }else if(Integer.valueOf(stringList[1])==3){
-                            this.projectileList.add(new ProjectileInfo(proj, this.config.projColor3()));
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-    }
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() != GameState.LOGGED_IN)
+		{
+			reset();
+		}
+	}
 
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		Iterator<Map.Entry<Projectile, ProjectileInfo>> iterator = projectileInfos.entrySet().iterator();
+		while (iterator.hasNext())
+		{
+			if (iterator.next().getKey().getRemainingCycles() <= 0)
+			{
+				iterator.remove();
+			}
+		}
+	}
 
+	@Subscribe
+	public void onProjectileMoved(ProjectileMoved event)
+	{
+		Projectile projectile = event.getProjectile();
+		Actor target = projectile.getInteracting();
+		Player localPlayer = client.getLocalPlayer();
+		if (config.showSelf() && target != null && !target.equals(localPlayer))
+		{
+			return;
+		}
+
+		Color color = projectileRules.get(projectile.getId());
+		if (color != null)
+		{
+			projectileInfos.putIfAbsent(projectile, new ProjectileInfo(projectile, color));
+		}
+	}
+
+	private void rebuildProjectileRules()
+	{
+		projectileRules.clear();
+		for (String entry : SPLITTER.splitToList(config.allProjectile()))
+		{
+			String[] fields = entry.split(",", -1);
+			if (fields.length != 2)
+			{
+				log.warn("Ignoring malformed projectile configuration: {}", entry);
+				continue;
+			}
+
+			try
+			{
+				int projectileId = Integer.parseInt(fields[0].trim());
+				int colorNumber = Integer.parseInt(fields[1].trim());
+				if (colorNumber < MIN_COLOR_NUMBER || colorNumber > MAX_COLOR_NUMBER)
+				{
+					log.warn("Ignoring projectile configuration with invalid color number: {}", entry);
+					continue;
+				}
+
+				projectileRules.put(projectileId, getConfiguredColor(colorNumber));
+			}
+			catch (NumberFormatException ex)
+			{
+				log.warn("Ignoring invalid projectile configuration: {}", entry);
+			}
+		}
+	}
+
+	private void refreshTrackedProjectiles()
+	{
+		Iterator<Map.Entry<Projectile, ProjectileInfo>> iterator = projectileInfos.entrySet().iterator();
+		while (iterator.hasNext())
+		{
+			Map.Entry<Projectile, ProjectileInfo> entry = iterator.next();
+			Color color = projectileRules.get(entry.getKey().getId());
+			if (color == null)
+			{
+				iterator.remove();
+			}
+			else
+			{
+				entry.getValue().color = color;
+			}
+		}
+	}
+
+	private Color getConfiguredColor(int colorNumber)
+	{
+		switch (colorNumber)
+		{
+			case 2:
+				return config.projColor2();
+			case 3:
+				return config.projColor3();
+			default:
+				return config.projColor();
+		}
+	}
+
+	private void reset()
+	{
+		projectileInfos.clear();
+	}
 }
