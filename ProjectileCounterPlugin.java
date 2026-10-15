@@ -24,8 +24,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(
 	name = "<html><font color=#b82584>[J] Projectile Ticks",
-	description = "Overlays a tick counter for projectiles",
-	tags = {"projectile"},
+	description = "Shows a tick countdown on configured projectiles until they land",
+	tags = {"projectile", "tick", "counter", "combat", "overlay"},
 	enabledByDefault = false
 )
 @Slf4j
