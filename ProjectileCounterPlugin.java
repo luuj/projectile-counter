@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.Player;
 import net.runelite.api.Projectile;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -96,32 +95,34 @@ public class ProjectileCounterPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		Iterator<Map.Entry<Projectile, ProjectileInfo>> iterator = projectileInfos.entrySet().iterator();
-		while (iterator.hasNext())
+		if (!projectileInfos.isEmpty())
 		{
-			if (iterator.next().getKey().getRemainingCycles() <= 0)
-			{
-				iterator.remove();
-			}
+			projectileInfos.keySet().removeIf(projectile -> projectile.getRemainingCycles() <= 0);
 		}
 	}
 
 	@Subscribe
 	public void onProjectileMoved(ProjectileMoved event)
 	{
+		// ProjectileMoved fires repeatedly for every projectile in the scene, so do the cheap
+		// checks (configured id, already tracked) before looking at the target.
 		Projectile projectile = event.getProjectile();
-		Actor target = projectile.getInteracting();
-		Player localPlayer = client.getLocalPlayer();
-		if (config.showSelf() && target != null && !target.equals(localPlayer))
+		Color color = projectileRules.get(projectile.getId());
+		if (color == null || projectileInfos.containsKey(projectile))
 		{
 			return;
 		}
 
-		Color color = projectileRules.get(projectile.getId());
-		if (color != null)
+		if (config.showSelf())
 		{
-			projectileInfos.putIfAbsent(projectile, new ProjectileInfo(projectile, color));
+			Actor target = projectile.getTargetActor();
+			if (target != null && target != client.getLocalPlayer())
+			{
+				return;
+			}
 		}
+
+		projectileInfos.put(projectile, new ProjectileInfo(projectile, color));
 	}
 
 	private void rebuildProjectileRules()

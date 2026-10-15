@@ -1,8 +1,11 @@
 package net.runelite.client.plugins.projectilecd;
 
-import net.runelite.client.config.*;
-
-import java.awt.*;
+import java.awt.Color;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
 
 @ConfigGroup("Projectile")
 public interface ProjectileCounterConfig extends Config {
@@ -17,7 +20,7 @@ public interface ProjectileCounterConfig extends Config {
             keyName = "allProjectile",
             description = "One entry per line: projectile ID, color number (1-3)",
             position = 1,
-            section = "projSettings"
+            section = projSettings
     )
     default String allProjectile() {
         return "";
@@ -28,7 +31,7 @@ public interface ProjectileCounterConfig extends Config {
             name = "Tick Number Color 1",
             description = "Color of projectile tick counter",
             position = 3,
-            section = "projSettings"
+            section = projSettings
     )
     default Color projColor()
     {
@@ -40,7 +43,7 @@ public interface ProjectileCounterConfig extends Config {
             name = "Tick Number Color 2",
             description = "Color of projectile tick counter",
             position = 2,
-            section = "projSettings"
+            section = projSettings
     )
     default Color projColor2()
     {
@@ -52,7 +55,7 @@ public interface ProjectileCounterConfig extends Config {
             name = "Tick Number Color 3",
             description = "Color of projectile tick counter",
             position = 4,
-            section = "projSettings"
+            section = projSettings
     )
     default Color projColor3()
     {
@@ -68,7 +71,7 @@ public interface ProjectileCounterConfig extends Config {
             name = "Text Size",
             description = "Sets the text size of the ticks overlay",
             position = 5,
-            section = "projSettings"
+            section = projSettings
     )
     default int textSize() {
         return 20;
@@ -76,10 +79,10 @@ public interface ProjectileCounterConfig extends Config {
 
     @ConfigItem(
             keyName = "showSelf",
-		name = "Hide other-targeted projectiles",
-		description = "Hide projectiles explicitly targeted at another actor; ground-targeted projectiles are still shown",
+            name = "Hide other-targeted projectiles",
+            description = "Hide projectiles explicitly targeted at another actor; ground-targeted projectiles are still shown",
             position = 6,
-            section = "projSettings"
+            section = projSettings
     )
     default boolean showSelf() {
         return true;

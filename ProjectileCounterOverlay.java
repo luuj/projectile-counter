@@ -1,18 +1,21 @@
 package net.runelite.client.plugins.projectilecd;
 
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.client.ui.overlay.*;
+import net.runelite.api.Projectile;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayUtil;
 
-import javax.inject.Inject;
-import java.awt.*;
-import java.util.Iterator;
+public class ProjectileCounterOverlay extends Overlay {
+    private static final int CYCLES_PER_TICK = 30;
 
-import static net.runelite.client.ui.overlay.OverlayUtil.renderTextLocation;
-
-public class ProjectileCounterOverlay extends OverlayPanel {
     private final Client client;
     private final ProjectileCounterPlugin plugin;
     private final ProjectileCounterConfig config;
@@ -24,32 +27,40 @@ public class ProjectileCounterOverlay extends OverlayPanel {
         this.client = client;
         this.plugin = plugin;
         this.config = config;
-        this.setPosition(OverlayPosition.DYNAMIC);
-        this.setPriority(OverlayPriority.HIGH);
-        this.setLayer(OverlayLayer.ABOVE_SCENE);
+        setPosition(OverlayPosition.DYNAMIC);
+        setPriority(PRIORITY_HIGH);
+        setLayer(OverlayLayer.ABOVE_SCENE);
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        Iterator<ProjectileInfo> projectileIterator = this.plugin.projectileInfos.values().iterator();
+        if (plugin.projectileInfos.isEmpty()) {
+            return null;
+        }
 
-        while (projectileIterator.hasNext()) {
-            ProjectileInfo projectileInfo = projectileIterator.next();
-            String textOverlay = Integer.toString(projectileInfo.currProjectile.getRemainingCycles()/30);
-            LocalPoint localPoint = new LocalPoint((int) projectileInfo.currProjectile.getX(), (int) projectileInfo.currProjectile.getY());
+        // Same font for every projectile, so set it once per frame.
+        Font oldFont = graphics.getFont();
+        graphics.setFont(getFont());
 
-            Point textLoc = Perspective.localToCanvas(client, localPoint, 0, Perspective.getTileHeight(client, localPoint, projectileInfo.currProjectile.getFloor()) - (int) projectileInfo.currProjectile.getZ());
+        for (ProjectileInfo projectileInfo : plugin.projectileInfos.values()) {
+            Projectile projectile = projectileInfo.currProjectile;
+            int remainingCycles = projectile.getRemainingCycles();
+            if (remainingCycles <= 0) {
+                // Landed this frame; it's removed on the next game tick.
+                continue;
+            }
+
+            // getX/getY/getZ are the projectile's current position in the scene, with Z as an
+            // absolute height, so it can be projected directly without Projectile.getFloor().
+            Point textLoc = Perspective.localToCanvas(client, (int) projectile.getX(), (int) projectile.getY(), (int) projectile.getZ());
             if (textLoc != null) {
-                Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-                Font oldFont = graphics.getFont();
-                graphics.setFont(getFont());
-                renderTextLocation(graphics, pointShadow, textOverlay, Color.BLACK);
-                renderTextLocation(graphics, textLoc, textOverlay, projectileInfo.color);
-                graphics.setFont(oldFont);
+                // OverlayUtil already draws a black 1px shadow under the text.
+                OverlayUtil.renderTextLocation(graphics, textLoc, Integer.toString(remainingCycles / CYCLES_PER_TICK), projectileInfo.color);
             }
         }
 
-        return super.render(graphics);
+        graphics.setFont(oldFont);
+        return null;
     }
 
     private Font getFont() {

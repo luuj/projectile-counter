@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.projectilecd;
 
+import java.awt.Color;
 import net.runelite.api.Projectile;
-import java.awt.*;
 
 public class ProjectileInfo {
     final Projectile currProjectile;
